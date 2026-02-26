@@ -1,0 +1,1108 @@
+---
+title: "Early-Onset Breast Cancer in METABRIC: Clinical and Genomic Features of Patients Diagnosed Under 40 and Their Prognostic Significance Across PAM50 Subtypes"
+author: "Yuliya Savenko"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = normalizePath(dirname(knitr::current_input(dir = TRUE))))
+knitr::opts_chunk$set(
+  echo       = FALSE,
+  warning    = FALSE,
+  message    = FALSE,
+  fig.align  = "center"
+)
+
+set.seed(1)
+```
+
+---
+
+# Abstract
+
+**Background:** Breast cancer diagnosed in women under 40 is known to carry worse outcomes than later-onset disease, but it is not entirely clear how much of this is explained by younger women having more aggressive subtypes versus age having an independent effect within molecular subgroups. This report uses the METABRIC cohort to try and address this question.
+
+**Methods:** The METABRIC clinical and somatic mutation datasets were analysed (17,272 mutations across 2,369 patients). PAM50 subtype labels were used as the primary molecular classifier; the two subtypes most enriched in patients under 40 (Luminal B and Basal-like) were selected for focused biological comparison using clinical biomarker profiles. Patients were grouped by age at diagnosis with the <40 group as the focus. Clinical biomarker profiles and mutation frequencies were compared across age groups and subtypes. Survival was analysed using Kaplan–Meier curves and a multivariable Cox proportional hazards model. A secondary analysis looked at treatment outcomes in premenopausal ER-positive patients.
+
+**Results:** The <40 group was enriched for Basal-like and claudin-low subtypes and under-represented in Luminal A. *GATA3* mutations were more common in younger luminal patients, and Basal-like tumours showed higher tumour mutation burden, consistent with *TP53*-driven instability. Age remained an independent predictor of survival in the adjusted Cox model, suggesting a within-subtype age effect beyond the compositional shift alone. The survival penalty was most visible in luminal subtypes. Among premenopausal ER-positive patients, LumB showed the most complex treatment-response pattern, consistent with endocrine resistance being amplified at young age.
+
+**Conclusions:** Subtype distribution alone does not fully explain the survival disadvantage of early-onset breast cancer in this cohort. Age-specific genomic features and a genuine within-subtype age effect are both detectable, and these findings have implications for how young patients with luminal disease are managed clinically.
+
+---
+
+# Introduction
+
+Breast cancer diagnosed before age 40, commonly termed adolescent and young adult (AYA) breast cancer, is associated with disproportionately poor outcomes. In developed countries, it is the leading cause of cancer-related death in women in this age group, and younger patients experience inferior survival even after adjustment for stage and grade (Cathcart-Rake et al., 2021). This disparity is partly attributed to tumour biology. Younger women are more likely to present with aggressive intrinsic subtypes such as Basal-like and Luminal B, to harbour germline *BRCA1/2* or *TP53* mutations, and to face endocrine and fertility-related treatment complexities (Anastasiadi et al., 2017).
+
+However, emerging evidence suggests that age-related biological differences extend beyond subtype distribution. Within Luminal A—the most prognostically favourable PAM50 category—tumours arising in younger women exhibit increased proliferative signalling and endocrine resistance signatures compared with those in older patients (Azim et al., 2015). These observations raise the possibility that age exerts an independent biological effect within intrinsic subtypes.
+
+We therefore hypothesise that early-onset breast cancer represents a biologically distinct entity within PAM50 strata. If this is the case, younger patients should demonstrate subtype-specific differences in somatic mutation profiles and survival outcomes that persist after accounting for subtype classification and standard clinical covariates. Transcriptional differences observed in younger patients should be reflected in measurable genomic divergence—such as altered driver gene frequencies or tumour mutation burden—and in differential survival within subtype-defined groups.
+
+To test this hypothesis, we analysed data from the METABRIC cohort, a large, publicly available breast cancer dataset comprising nearly 2,000 patients with linked clinical, genomic, and transcriptomic information (Curtis et al., 2012; Pereira et al., 2016). Using clinical data including PAM50 subtype, receptor status, menopausal status, treatment records, and overall survival, together with somatic mutation data in MAF format, we examined whether early-onset (<40 years) patients differ from older patients across four dimensions. These were subtype distribution; driver mutation frequency and tumour mutation burden within subtype; survival after adjustment for subtype and other covariates; and treatment-associated survival patterns in premenopausal ER-positive disease.
+
+By explicitly testing whether age retains biological and prognostic significance within intrinsic subtypes, this study aims to determine whether early-onset breast cancer reflects merely a shift in subtype prevalence or a distinct biological phenotype with independent clinical implications.
+
+---
+
+# Methods
+
+Two METABRIC files were analysed. The first was a clinical table containing demographics, menopausal status, ER status by immunohistochemistry, HER2 copy-number status by SNP array, treatment indicators (chemotherapy, hormone therapy, radiotherapy), PAM50 subtype labels, and overall survival time and status. The second was a somatic mutation MAF file containing 17,272 variant calls across 2,369 patients.
+
+METABRIC is a de-identified secondary-use research resource. This report uses publicly available patient-level data with no direct identifiers; all analyses are at cohort level with no attempt at re-identification, consistent with the original study's governance framework.
+
+Variables were renamed and a known typographic error in ER status corrected. Survival status was recoded to a binary event indicator. Age was retained as a continuous covariate and discretised into five bands (<40, 40–49, 50–59, 60–69, ≥70) for descriptive stratification. Patients with unclassified (NC) PAM50 designations were excluded; missing values were handled by complete-case analysis. No imputation was applied.
+
+Mutations were loaded using `maftools::read.maf()` with clinical annotations keyed on tumour sample barcode. Only non-synonymous variants are retained by default. Samples without PAM50 labels were excluded from subtype-stratified analyses.
+
+PAM50 subtype frequencies were compared across age groups using stacked proportion plots. The two subtypes most enriched in patients under 40 — Luminal B and Basal-like — were selected for focused biological comparison. Clinical biomarker profiles (ER status, HER2 copy-number status, menopausal state, and treatment receipt) were compared between subtypes and age groups using grouped bar charts; age distributions were compared using violin plots with Wilcoxon tests.
+
+Cohort-level mutation composition was summarised using `plotmafSummary()` and gene-level recurrence using oncoplots. Tumour mutation burden (non-synonymous mutations per sample) was compared across PAM50 groups and age groups using Kruskal–Wallis tests; extreme outliers were trimmed for visualisation only. Pairwise subtype and age-group comparisons used `coOncoplot()`. Gene–gene co-occurrence and mutual exclusivity among the top 20 mutated genes were assessed using `somaticInteractions()` with Fisher’s exact tests.
+
+Overall survival was defined as time from diagnosis to death or censoring. Kaplan–Meier estimates were compared across PAM50 subtypes using log-rank tests. A multivariable Cox model was fitted with age (continuous), menopausal status, ER status, HER2 copy-number gain, chemotherapy, and PAM50 subtype (LumA reference), reporting hazard ratios with 95% confidence intervals.
+
+Premenopausal ER-positive patients were stratified by PAM50 (LumA vs LumB) and age group (<40 vs ≥40). Treatment receipt rates were compared descriptively. A Cox model adjusting for continuous age, subtype, and treatment group was used to assess whether early onset modifies treatment response. Given the observational design and confounding by indication, all estimates should be treated as associative rather than causal.
+
+
+```{r libraries, include=FALSE}
+# ── Install any missing CRAN packages ─────────────────────────────────────────
+required_pkgs <- c(
+  "readr", "dplyr", "ggplot2", "tidyr", "stringr",
+  "survival", "survminer", "ggpubr", "RColorBrewer",
+  "knitr", "kableExtra", "scales", "forcats", "patchwork", "broom",
+  "prettydoc", "ggrepel"
+)
+new_pkgs <- required_pkgs[!required_pkgs %in% installed.packages()[, "Package"]]
+if (length(new_pkgs)) install.packages(new_pkgs, repos = "https://cloud.r-project.org")
+
+# ── Install Bioconductor packages ─────────────────────────────────────────────
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+if (!requireNamespace("maftools", quietly = TRUE))
+  BiocManager::install("maftools", ask = FALSE)
+
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(stringr)
+library(survival)
+library(survminer)
+library(ggpubr)
+library(RColorBrewer)
+library(knitr)
+library(kableExtra)
+library(scales)
+library(forcats)
+library(patchwork)
+library(broom)
+library(maftools)
+```
+
+```{r load-data, include=FALSE}
+# ── File locations ─────────────────────────────────────────────────────────────
+# GitHub raw URLs 
+csv_url  <- "https://raw.githubusercontent.com/Yuliya0257/Y.Savenko-Module-3-files/main/metabric_data_clinical_patient.csv"
+
+rmd_dir  <- tryCatch(dirname(knitr::current_input(dir = TRUE)), error = function(e) ".")
+csv_name <- "metabric_data_clinical_patient.csv"
+csv_path <- file.path(rmd_dir, csv_name)
+
+# ── Download CSV if not already present locally ────────────────────────────────
+if (!file.exists(csv_path)) {
+  message("Downloading clinical CSV from GitHub...")
+  download.file(csv_url, destfile = csv_path, mode = "wb", quiet = TRUE)
+}
+
+df_raw <- read_csv(csv_path, show_col_types = FALSE)
+
+df <- df_raw %>%
+  rename(
+    age           = age_at_diagnosis,
+    menopause     = menopausal_state,
+    er_status     = er_status_ihc,
+    her2_status   = her2_status_snp6,
+    chemo         = chemotherapy,
+    hormone_tx    = hormone_therapy,
+    radio         = radiotherapy,
+    pam50         = pam50_subtype,
+    intclust      = intclust_subtype,
+    os_status_raw = os_status
+  ) %>%
+  # Fix ER status typo present in source data
+  mutate(
+    er_status = recode(er_status, "Positve" = "Positive"),
+    # Binary survival outcome
+    os_event  = if_else(os_status_raw == "1:DECEASED", 1L, 0L),
+    # Age group
+    age_group = cut(age,
+                    breaks = c(0, 40, 50, 60, 70, Inf),
+                    labels = c("<40", "40-49", "50-59", "60-69", "≥70"),
+                    right  = FALSE),
+    # PAM50 as ordered factor
+    pam50 = factor(pam50,
+                   levels = c("LumA", "LumB", "Her2", "Basal",
+                              "claudin-low", "Normal", "NC"))
+  ) %>%
+  # Exclude 6 unclassified patients
+  filter(pam50 != "NC") %>%
+  droplevels()
+
+# Analysis-ready subset for subtype-stratified summaries (excludes missing PAM50 labels)
+df_subtype <- df %>% filter(!is.na(pam50)) %>% droplevels()
+
+cat("Final dataset:", nrow(df), "patients ×", ncol(df), "variables\n")
+```
+
+```{r colour-palette, include=FALSE}
+# Consistent colour palette used throughout
+pam50_colours <- c(
+  "LumA"        = "#1E90FF",
+  "LumB"        = "#5DADE2",
+  "Her2"        = "#2471A3",
+  "Basal"       = "#154360",
+  "claudin-low" = "#85C1E9",
+  "Normal"      = "#AED6F1"
+)
+
+# Plot theme matching document style
+theme_metabric <- function() {
+  theme_minimal(base_size = 14) +
+    theme(
+      panel.background  = element_rect(fill = "#EAF2F8", color = NA),
+      plot.background   = element_rect(fill = "#FFFFFF", color = NA),
+      panel.grid.major  = element_line(color = "#D6EAF8"),
+      panel.grid.minor  = element_line(color = "#EBF5FB"),
+      plot.title        = element_text(face = "bold", color = "#1A5276"),
+      axis.title        = element_text(color = "#1A5276"),
+      legend.background = element_rect(fill = "#EAF2F8", color = NA)
+    )
+}
+```
+
+---
+
+# Results
+
+## 0. Data Exploration and Cohort Description
+
+The final analytical dataset comprised **`r nrow(df)`** patients after excluding six with unclassified PAM50 labels. Table 1 summarises cohort characteristics by age group. The <40 group accounts for `r sum(df$age < 40, na.rm=TRUE)` patients (`r round(mean(df$age < 40, na.rm=TRUE)*100, 1)`%), with higher rates of premenopausal status and Basal-like/LumB enrichment relative to older age bands.
+
+```{r cohort-table}
+# ── Cohort characteristics table stratified by age group ─────────────────────
+cohort_tab <- df %>%
+  mutate(age_grp2 = if_else(age < 40, "<40", "≥40")) %>%
+  group_by(age_grp2) %>%
+  summarise(
+    `N`                    = as.character(n()),
+    `Age, median (IQR)`    = sprintf("%.1f (%.1f–%.1f)",
+                               median(age, na.rm=TRUE),
+                               quantile(age, 0.25, na.rm=TRUE),
+                               quantile(age, 0.75, na.rm=TRUE)),
+    `ER Positive (%)`      = sprintf("%.1f", mean(er_status == "Positive", na.rm=TRUE)*100),
+    `HER2 Gain (%)`        = sprintf("%.1f", mean(her2_status == "GAIN",    na.rm=TRUE)*100),
+    `Premenopausal (%)`    = sprintf("%.1f", mean(menopause == "Pre",        na.rm=TRUE)*100),
+    `LumA (%)`             = sprintf("%.1f", mean(pam50 == "LumA",           na.rm=TRUE)*100),
+    `LumB (%)`             = sprintf("%.1f", mean(pam50 == "LumB",           na.rm=TRUE)*100),
+    `Basal (%)`            = sprintf("%.1f", mean(pam50 == "Basal",          na.rm=TRUE)*100),
+    `Her2 (%)`             = sprintf("%.1f", mean(pam50 == "Her2",           na.rm=TRUE)*100),
+    `Deceased (%)`         = sprintf("%.1f", mean(os_event == 1,             na.rm=TRUE)*100),
+    `Median OS (months)`   = sprintf("%.1f", median(os_months,               na.rm=TRUE)),
+    .groups = "drop"
+  ) %>%
+  tidyr::pivot_longer(-age_grp2, names_to = "Characteristic", values_to = "value") %>%
+  tidyr::pivot_wider(names_from = age_grp2, values_from = value)
+
+kable(cohort_tab,
+      caption = "Table 1. Cohort characteristics by age group (<40 vs ≥40 years at diagnosis).") %>%
+  kable_styling(bootstrap_options = c("striped","hover","condensed","responsive"),
+                full_width = FALSE, font_size = 13)
+```
+
+Completeness checks confirmed no missing values for age, PAM50, or survival status. ER status had <1% missing, handled by complete-case analysis. No duplicate patient IDs were detected.
+
+---
+
+## 1. Biological Differences Between the Two AYA-Enriched PAM50 Subtypes
+
+### 1.1 Rationale and Subtype Selection
+
+This analysis focuses on the two PAM50 subtypes most enriched in younger patients — **Luminal B** and **Basal-like** (Figure 1). LumB retains ER expression and luminal differentiation but combines this with elevated proliferation and, in a proportion of cases, HER2 gain, making it harder to treat than LumA despite being ER-positive. Basal-like is predominantly triple-negative, driven by *TP53* loss and BRCA1-pathway defects, and relies on cytotoxic chemotherapy (Prat et al., 2015; Anastasiadi et al., 2017).
+
+
+
+```{r q1-subtype-counts, include=FALSE}
+# Identify the two AYA-enriched subtypes from the data
+aya_enrichment <- df_subtype %>%
+  filter(!is.na(age_group)) %>%
+  count(age_group, pam50) %>%
+  group_by(age_group) %>%
+  mutate(prop = n / sum(n)) %>%
+  ungroup()
+
+# Subset to the two focus subtypes
+focus_subtypes <- c("LumB", "Basal")
+df_focus <- df_subtype %>%
+  filter(pam50 %in% focus_subtypes) %>%
+  droplevels()
+```
+
+### 1.2 Subtype Distribution and AYA Enrichment
+
+```{r q1-aya-enrichment, fig.cap="**Figure 1.** PAM50 subtype distribution stratified by age group. The <40 group shows clear enrichment for Basal-like and Luminal B subtypes relative to older patients, and relative depletion of Luminal A. These two subtypes are the focus of the biological comparison in this section."}
+ggplot(aya_enrichment, aes(x = age_group, y = prop, fill = pam50)) +
+  geom_col(position = "fill", width = 0.75) +
+  scale_fill_manual(values = pam50_colours) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(
+    title = "PAM50 Subtype Distribution by Age Group",
+    x     = "Age group at diagnosis",
+    y     = "Proportion of patients",
+    fill  = "PAM50 Subtype"
+  ) +
+  theme_metabric()
+```
+
+Figure 1 confirms the expected AYA enrichment pattern. In the <40 group, Basal-like and LumB together account for a substantially larger share of tumours than in older age bands, while LumA is comparatively under-represented. Readers should note the contrast between the <40 and 60–69 bars, where the shift from aggressive to luminal subtypes is most visible.
+
+### 1.3 Clinical Biomarker Profiles: ER, HER2, and Proliferative Markers
+
+Since PAM50 subtypes are defined by their expression programmes, clinical biomarkers provide measurable proxies for the underlying biology. ER and HER2 status, menopausal state, and treatment allocation (Figure 2) are compared between LumB and Basal-like across age groups; the proportions in each bar directly reflect the biological separation between the two subtypes.
+
+```{r q1-biomarker-comparison, fig.height=6, fig.cap="**Figure 2.** Clinical biomarker and treatment profiles for Luminal B and Basal-like subtypes, stratified by age group (<40 vs ≥40). Proportions shown within each subtype–age combination. The contrast between ER-positive LumB and triple-negative Basal-like is the dominant biological signal; age modifies this within each subtype."}
+bm_focus <- df %>%
+  filter(pam50 %in% focus_subtypes, !is.na(age_group)) %>%
+  mutate(aya = if_else(age < 40, "<40", "≥40")) %>%
+  group_by(pam50, aya) %>%
+  summarise(
+    `ER Positive`    = mean(er_status == "Positive", na.rm = TRUE),
+    `HER2 Gain`      = mean(her2_status == "GAIN", na.rm = TRUE),
+    `Pre-menopausal` = mean(menopause == "Pre", na.rm = TRUE),
+    `Chemotherapy`   = mean(chemo == "YES", na.rm = TRUE),
+    `Hormone Tx`     = mean(hormone_tx == "YES", na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(c(`ER Positive`, `HER2 Gain`, `Pre-menopausal`,
+                 `Chemotherapy`, `Hormone Tx`),
+               names_to = "Feature", values_to = "Proportion") %>%
+  mutate(label = sprintf("n=%d", n))
+
+ggplot(bm_focus, aes(x = Feature, y = Proportion, fill = aya)) +
+  geom_col(position = "dodge", width = 0.7) +
+  facet_wrap(~ pam50, ncol = 2) +
+  scale_fill_manual(values = c("<40" = "#154360", "≥40" = "#85C1E9"),
+                    name = "Age group") +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0, 1)) +
+  labs(
+    title = "Biomarker Profiles: LumB vs Basal-like by Age Group",
+    x = NULL, y = "Proportion of patients"
+  ) +
+  theme_metabric() +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))
+```
+
+Figure 2 shows the dominant biological contrast between the two subtypes. Basal-like tumours are predominantly ER-negative and HER2-neutral, with near-universal chemotherapy receipt (approaching 100% in both age groups) and minimal hormone therapy — consistent with the triple-negative phenotype. LumB tumours are predominantly ER-positive (>80%), with a notably higher rate of HER2 gain than LumA, and receive both hormone therapy and chemotherapy at appreciable rates. In LumB, pre-menopausal status constrains aromatase inhibitor use and motivates ovarian suppression in higher-risk patients (Prat et al., 2015).
+
+### 1.4 Age at Diagnosis and Subtype Overlap
+
+```{r q1-age-violin, fig.cap="**Figure 3.** Age at diagnosis distributions for Luminal B and Basal-like subtypes, shown as violin plots with overlaid boxplots. Both subtypes have younger median ages than the cohort overall, but Basal-like has a more pronounced left skew, reflecting its stronger enrichment in the youngest patients."}
+df %>%
+  filter(pam50 %in% focus_subtypes) %>%
+  ggplot(aes(x = pam50, y = age, fill = pam50)) +
+  geom_violin(alpha = 0.7, trim = FALSE, show.legend = FALSE) +
+  geom_boxplot(width = 0.15, outlier.size = 0.5,
+               fill = "white", show.legend = FALSE) +
+  scale_fill_manual(values = pam50_colours) +
+  stat_compare_means(method = "wilcox.test",
+                     label = "p.format", label.x = 1.4,
+                     size = 4) +
+  labs(
+    title = "Age at Diagnosis: LumB vs Basal-like",
+    x = "PAM50 Subtype", y = "Age at diagnosis (years)"
+  ) +
+  theme_metabric()
+```
+
+Figure 3 shows that Basal-like has a younger median age than LumB (Wilcoxon p < 2×10⁻¹⁶), with a more pronounced left skew and longer tail into younger ages. The interquartile ranges in the boxplots indicate that the Basal-like median sits roughly 5–7 years below that of LumB, consistent with its stronger association with BRCA1-pathway defects and *TP53* mutations prevalent in younger patients (Prat et al., 2015; Azim et al., 2015).
+
+### 1.5 Summary: Dominant Biological Signals Between LumB and Basal-like
+
+The dominant biological signal is the ER/triple-negative divide. LumB retains luminal differentiation and ER-driven growth, while Basal-like is defined by proliferative and DNA-damage-response biology. Within both subtypes, younger patients are more likely to be pre-menopausal, modifying treatment options independently of tumour biology. Basal-like shows stronger age enrichment, consistent with its association with BRCA1 germline variants and *TP53* mutations prevalent in younger patients.
+
+---
+
+## 2. Age-Stratified Mutational Landscape
+
+### 2.1 Loading Mutation Data
+
+This section examines somatic mutation data to ask whether early-onset patients have a different profile from older patients, and whether any differences are subtype-specific or more general.
+
+```{r load-maf}
+# ── Build clinical annotation for maftools ────────────────────────────────────
+# maftools requires a data.frame with Tumor_Sample_Barcode matching the MAF
+clin_maf <- df %>%
+  select(Tumor_Sample_Barcode = patient_id,
+         pam50, age, menopause, os_months, os_event) %>%
+  as.data.frame()
+
+# ── File locations ─────────────────────────────────────────────────────────────
+# GitHub raw URL — update if you move the file within the repo
+maf_url  <- "https://raw.githubusercontent.com/Yuliya0257/Y.Savenko-Module-3-files/main/metabric_data_mutations.maf"
+
+maf_name <- "metabric_data_mutations.maf"
+maf_path <- file.path(rmd_dir, maf_name)
+
+# ── Download MAF if not already present locally ────────────────────────────────
+if (!file.exists(maf_path)) {
+  message("Downloading MAF file from GitHub...")
+  download.file(maf_url, destfile = maf_path, mode = "wb", quiet = TRUE)
+}
+
+# ── Load MAF ──────────────────────────────────────────────────────────────────
+metabric_maf <- read.maf(
+  maf          = maf_path,
+  clinicalData = clin_maf,
+  verbose      = FALSE
+)
+```
+
+### 2.2 Mutational Landscape Overview
+
+```{r maf-summary, fig.height=8, fig.cap="**Figure 4.** Summary dashboard of the METABRIC mutational landscape showing variant classification, type, SNP count per sample, top mutated genes, and Ti/Tv ratios."}
+plotmafSummary(
+  maf       = metabric_maf,
+  rmOutlier = TRUE,
+  addStat   = "median",
+  dashboard = TRUE,
+  titvRaw   = FALSE
+)
+```
+
+```{r tmb-by-subtype, fig.cap="**Figure 5.** Tumour mutation burden (mutations per sample) by PAM50 subtype. Samples with >50 mutations trimmed as outliers. Basal-like tumours, which are disproportionately represented in younger patients, show the highest TMB, consistent with TP53-driven genome instability."}
+# Extract per-sample mutation counts and join with subtype
+tmb_df <- getSampleSummary(metabric_maf) %>%
+  as.data.frame() %>%
+  left_join(
+    df %>% select(patient_id, pam50) %>% rename(Tumor_Sample_Barcode = patient_id),
+    by = "Tumor_Sample_Barcode"
+  ) %>%
+  filter(!is.na(pam50), total <= 50)   # trim extreme outliers for visualisation
+
+ggplot(tmb_df, aes(x = pam50, y = total, fill = pam50)) +
+  geom_boxplot(outlier.size = 0.6, alpha = 0.85, show.legend = FALSE) +
+  scale_fill_manual(values = pam50_colours) +
+  stat_compare_means(method = "kruskal.test",
+                     label = "p.format", label.x = 1.2, label.y = 48,
+                     size = 3.5) +
+  labs(
+    title = "Tumour Mutation Burden by PAM50 Subtype",
+    x     = "PAM50 Subtype",
+    y     = "Total mutations per sample"
+  ) +
+  theme_metabric()
+```
+
+Basal-like tumours have the highest mutation counts across subtypes (Figure 5), statistically significant by Kruskal–Wallis. Table 2 shows that *TP53* — the dominant driver in Basal-like — is mutated in approximately 29% of samples overall, but its frequency in Basal-like specifically is far higher, as reflected in the elevated median TMB visible in Figure 5. Since Basal-like is the subtype most enriched in younger women, this supports the idea that the genomic impact of early onset is measurable in the mutation data.
+
+### 2.3 Key Cancer Driver Genes and Age-Associated Enrichment Patterns
+
+```{r oncoplot, fig.height=10, fig.width=14, fig.cap="**Figure 6.** Oncoplot showing the top 20 most frequently mutated genes across the METABRIC cohort, annotated by PAM50 subtype. PIK3CA and GATA3 mutations, enriched in luminal disease, show age-related differences described in Section 2.4."}
+oncoplot(
+  maf              = metabric_maf,
+  top              = 20,
+  clinicalFeatures = "pam50",
+  anno_height      = 2,
+  sortByAnnotation = TRUE,
+  fontSize         = 0.7,
+  legendFontSize   = 0.8,
+  titleFontSize    = 1.0
+)
+```
+
+```{r gene-freq-table}
+# Frequency table of top mutated genes
+# Column names vary across maftools versions — detect at runtime
+gene_sum_raw <- getGeneSummary(metabric_maf) %>% as.data.frame()
+
+# Identify the sample-count column (MutatedSamples or AlteredSamples)
+mut_col <- intersect(c("MutatedSamples", "AlteredSamples"), names(gene_sum_raw))[1]
+if (is.na(mut_col)) stop("Cannot find mutation count column in getGeneSummary() output. Columns: ",
+                         paste(names(gene_sum_raw), collapse = ", "))
+
+summary_df <- as.data.frame(metabric_maf@summary)
+n_samples  <- as.numeric(summary_df[summary_df[[1]] == "Samples", 2][1])
+if (is.na(n_samples) || length(n_samples) == 0) n_samples <- as.numeric(summary_df[3, 2])
+
+gene_sum <- gene_sum_raw %>%
+  mutate(
+    `Mutated samples` = .data[[mut_col]],
+    `Frequency (%)`   = round(.data[[mut_col]] / n_samples * 100, 1)
+  ) %>%
+  select(Gene = Hugo_Symbol, `Mutated samples`, `Frequency (%)`) %>%
+  head(15)
+
+kable(gene_sum,
+      caption = "Table 2. Top 15 most frequently mutated genes in the METABRIC cohort.") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                full_width = FALSE, font_size = 13)
+```
+
+```{r manhattan-plot, fig.height=6, fig.width=9, fig.cap="**Figure 7.** Manhattan plot of somatic mutations across chromosomes in the METABRIC cohort. Each point represents a mutation; chromosomes are alternately shaded. Top driver genes (*PIK3CA*, *TP53*, *CDH1*, *GATA3*) are highlighted and labelled. GATA3 (10q14) and PIK3CA (3q26) show luminal enrichment patterns with known age-related differences."}
+# ── Extract mutation data from MAF ───────────────────────────────────────────
+mut_df <- metabric_maf@data %>%
+  as.data.frame() %>%
+  filter(!is.na(Start_Position), !is.na(Chromosome)) %>%
+  mutate(
+    chrom_num = as.integer(gsub("chr", "", Chromosome)),
+    chrom_num = ifelse(Chromosome == "X", 23L,
+                ifelse(Chromosome == "Y", 24L, chrom_num))
+  ) %>%
+  filter(!is.na(chrom_num)) %>%
+  arrange(chrom_num, Start_Position)
+
+# ── Compute cumulative positions for x-axis ──────────────────────────────────
+chrom_sizes <- mut_df %>%
+  group_by(chrom_num) %>%
+  summarise(max_pos = max(Start_Position), .groups = "drop") %>%
+  arrange(chrom_num) %>%
+  mutate(offset = lag(cumsum(as.numeric(max_pos)), default = 0))
+
+mut_df <- mut_df %>%
+  left_join(chrom_sizes %>% select(chrom_num, offset), by = "chrom_num") %>%
+  mutate(pos_cum = as.numeric(Start_Position) + offset)
+
+# ── Highlight top driver genes ────────────────────────────────────────────────
+highlight_genes <- c("PIK3CA", "TP53", "CDH1", "GATA3")
+mut_df <- mut_df %>%
+  mutate(
+    is_highlight = Hugo_Symbol %in% highlight_genes,
+    gene_label   = ifelse(is_highlight, Hugo_Symbol, NA_character_),
+    chrom_parity = ifelse(chrom_num %% 2 == 0, "even", "odd")
+  )
+
+# ── Axis tick positions (chromosome midpoints) ───────────────────────────────
+axis_df <- mut_df %>%
+  group_by(chrom_num) %>%
+  summarise(centre = mean(pos_cum), .groups = "drop") %>%
+  mutate(label = ifelse(chrom_num == 23, "X", ifelse(chrom_num == 24, "Y",
+                        as.character(chrom_num))))
+
+# ── Label positions: one label per gene per chromosome (topmost point) ───────
+label_df <- mut_df %>%
+  filter(is_highlight) %>%
+  group_by(Hugo_Symbol, chrom_num) %>%
+  slice_max(order_by = pos_cum, n = 1) %>%
+  ungroup()
+
+# ── Plot ──────────────────────────────────────────────────────────────────────
+ggplot(mut_df, aes(x = pos_cum, y = chrom_num, colour = chrom_parity)) +
+  geom_jitter(data = filter(mut_df, !is_highlight),
+              height = 0.3, size = 0.6, alpha = 0.4) +
+  geom_point(data = filter(mut_df, is_highlight),
+             aes(colour = Hugo_Symbol), size = 2.2, alpha = 0.9) +
+  ggrepel::geom_text_repel(
+    data          = label_df,
+    aes(label = Hugo_Symbol, colour = Hugo_Symbol),
+    size          = 3.2,
+    fontface      = "bold.italic",
+    box.padding   = 0.4,
+    point.padding = 0.3,
+    max.overlaps  = 20,
+    show.legend   = FALSE
+  ) +
+  scale_colour_manual(
+    values = c(
+      "odd"     = "#85C1E9",
+      "even"    = "#1E90FF",
+      "PIK3CA"  = "#154360",
+      "TP53"    = "#C0392B",
+      "CDH1"    = "#1A5276",
+      "GATA3"   = "#2471A3"
+    ),
+    breaks = highlight_genes,
+    name   = "Highlighted gene"
+  ) +
+  scale_x_continuous(
+    breaks = axis_df$centre,
+    labels = axis_df$label,
+    expand = expansion(mult = 0.01)
+  ) +
+  scale_y_continuous(breaks = NULL) +
+  labs(
+    title = "Somatic Mutation Landscape Across Chromosomes (METABRIC)",
+    x     = "Chromosome",
+    y     = NULL
+  ) +
+  theme_metabric() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    axis.text.x        = element_text(size = 8, colour = "#1A5276"),
+    legend.position    = "bottom"
+  )
+```
+
+The Manhattan plot shows driver mutations clustering at the expected loci — *PIK3CA* at 3q26, *TP53* at 17p13, and *GATA3* at 10q14. Of these, *GATA3* is probably the most relevant to the AYA analysis given its reported enrichment in younger luminal patients and a possible role in endocrine resistance (Azim et al., 2015).
+
+### 2.4 Subtype-Specific and Age-Stratified Mutation Patterns
+
+```{r subtype-oncoplot, results='hide', fig.height=12, fig.width=14, fig.cap="**Figure 8.** Comparative oncoplot of the top 15 mutated genes in LumA versus Basal-like tumours. The divergent mutational profiles reflect fundamentally different oncogenic dependencies, with the Basal-like profile linked to the youngest patient ages in the cohort."}
+luma_ids  <- df %>% filter(pam50 == "LumA")  %>% pull(patient_id)
+basal_ids <- df %>% filter(pam50 == "Basal") %>% pull(patient_id)
+
+luma_maf  <- subsetMaf(metabric_maf, tsb = luma_ids)
+basal_maf <- subsetMaf(metabric_maf, tsb = basal_ids)
+
+top_genes <- unique(c(
+  getGeneSummary(luma_maf)[1:10,  Hugo_Symbol],
+  getGeneSummary(basal_maf)[1:10, Hugo_Symbol]
+))[1:15]
+
+old_par <- par(mar = c(3, 3, 3, 3), oma = c(1, 1, 1, 1))
+coOncoplot(
+  m1             = luma_maf,
+  m2             = basal_maf,
+  m1Name         = "LumA",
+  m2Name         = "Basal",
+  genes          = top_genes,
+  titleFontSize  = 0.8,
+  legendFontSize = 0.7
+)
+par(old_par)
+```
+
+```{r aya-vs-older-oncoplot, results='hide', fig.height=12, fig.width=14, fig.cap="**Figure 9.** Comparative oncoplot of the top 15 mutated genes in early-onset (<40) versus older (≥50) patients across all subtypes. GATA3 enrichment in younger patients and TP53 enrichment in older patients are the most clinically informative differences."}
+aya_ids   <- df %>% filter(age < 40)  %>% pull(patient_id)
+older_ids <- df %>% filter(age >= 50) %>% pull(patient_id)
+
+aya_maf   <- subsetMaf(metabric_maf, tsb = aya_ids)
+older_maf <- subsetMaf(metabric_maf, tsb = older_ids)
+
+# Cap to 15 unique genes (union of top-10 from each group keeps it manageable)
+aya_top_genes <- unique(c(
+  getGeneSummary(aya_maf)[1:10,   Hugo_Symbol],
+  getGeneSummary(older_maf)[1:10, Hugo_Symbol]
+))[1:15]
+
+# coOncoplot uses base graphics — set margins explicitly before calling
+old_par <- par(mar = c(3, 3, 3, 3), oma = c(1, 1, 1, 1))
+coOncoplot(
+  m1             = aya_maf,
+  m2             = older_maf,
+  m1Name         = "Age < 40",
+  m2Name         = "Age >= 50",
+  genes          = aya_top_genes,
+  titleFontSize  = 0.8,
+  legendFontSize = 0.7
+)
+par(old_par)
+```
+
+```{r somatic-interactions, results='hide', fig.height=8, fig.cap="**Figure 10.** Somatic interaction plot showing co-occurrence and mutual exclusivity among the top 20 mutated genes. The PIK3CA–TP53 mutual exclusivity encodes the fundamental divide between luminal (predominantly older, PIK3CA-driven) and basal (predominantly younger, TP53-driven) oncogenic programmes."}
+somaticInteractions(
+  maf    = metabric_maf,
+  top    = 20,
+  pvalue = c(0.05, 0.01)
+)
+```
+
+The comparative oncoplot (Figure 8) shows the expected LumA vs Basal-like split, with *PIK3CA*, *CDH1*, and *GATA3* dominant in LumA and *TP53* dominant in Basal-like. Cross-referencing Table 2, *PIK3CA* is the most frequently mutated gene in the cohort (~33% of samples), while *TP53* (~29%) and *GATA3* (~14%) follow. The age-group comparison in Figure 9 is the most informative plot in this section — readers should note the *GATA3* bar, which is visibly taller in the <40 column, consistent with published findings (Azim et al., 2015). Figure 10 confirms *PIK3CA* and *TP53* are mutually exclusive (p < 0.001), directly reflecting the biological divide between the subtypes most (Basal-like) and least (LumA) enriched in young women.
+
+---
+
+## 3. Age at Diagnosis as an Independent Predictor of Survival Across PAM50 Subtypes
+
+### 3.1 Age Group and Subtype Interaction on Survival
+
+Section 3 addresses whether age at diagnosis independently predicts overall survival, and whether any effect is uniform across subtypes or concentrated in some more than others.
+
+```{r age-subtype-survival, fig.cap="**Figure 11.** Median overall survival by PAM50 subtype and age group. This is the primary descriptive figure for the report's central question: does age modify the prognostic impact of subtype? The <40 group shows a distinct trajectory in LumA and LumB that is explored further in the Cox model."}
+age_surv <- df %>%
+  group_by(pam50, age_group) %>%
+  summarise(
+    n            = n(),
+    n_events     = sum(os_event),
+    median_os    = median(os_months),
+    mortality_rt = mean(os_event),
+    .groups      = "drop"
+  ) %>%
+  filter(n >= 10)  # remove very small cells
+
+ggplot(age_surv, aes(x = age_group, y = median_os, colour = pam50, group = pam50)) +
+  geom_line(linewidth = 1) +
+  geom_point(aes(size = n), alpha = 0.85) +
+  scale_colour_manual(values = pam50_colours) +
+  scale_size_continuous(range = c(2, 8), name = "n patients") +
+  labs(
+    title   = "Median Overall Survival by Subtype and Age Group",
+    x       = "Age group at diagnosis",
+    y       = "Median overall survival (months)",
+    colour  = "PAM50"
+  ) +
+  theme_metabric()
+```
+
+Figure 11 shows the age-survival relationship differs across subtypes. Readers should note the <40 and 40–49 trajectories in LumB, where median survival is lower than in the 50–59 and 60–69 groups, suggesting the age penalty is most active in luminal disease. In Basal-like, the pattern is less consistent and subtype biology dominates. The Cox model provides the more rigorous test.
+
+### 3.2 Overall Survival by PAM50 Subtype
+
+The Kaplan–Meier curves (Figure 12) establish the overall subtype survival picture before examining age-related modifications.
+
+```{r km-pam50, fig.height=8, fig.cap="**Figure 12.** Kaplan–Meier overall survival curves stratified by PAM50 subtype. P-value from log-rank test. These overall curves provide context for Figure 11, which shows how median survival within each subtype varies by age group."}
+surv_obj <- Surv(time  = df$os_months,
+                 event = df$os_event)
+
+km_fit <- survfit(surv_obj ~ pam50, data = df)
+
+ggsurvplot(
+  km_fit,
+  data          = df,
+  palette       = unname(pam50_colours[levels(df$pam50)]),
+  pval          = TRUE,
+  pval.method   = TRUE,
+  conf.int      = FALSE,
+  risk.table    = TRUE,
+  risk.table.height = 0.28,
+  xlab          = "Overall survival (months)",
+  ylab          = "Survival probability",
+  title         = "Overall Survival by PAM50 Subtype (METABRIC)",
+  legend.title  = "PAM50",
+  legend.labs   = levels(df$pam50),
+  ggtheme       = theme_metabric()
+)
+```
+
+LumA has clearly the best survival and Basal-like and HER2-enriched show the steepest early decline, consistent with the literature. The overall subtype differences are highly significant (log-rank p < 0.001). Readers should note the crossing of the Basal-like and HER2-enriched curves at approximately 60–80 months, which has implications for the proportional hazards assumption discussed in the Limitations.
+
+### 3.3 Multivariate Cox Model: Age as Independent Predictor Within Subtypes
+
+To properly test whether age has an independent effect on survival beyond its association with subtype, a multivariable Cox model was fitted including PAM50 subtype, ER status, HER2 gain, menopausal status, and chemotherapy.
+
+```{r cox-model, results='hide', fig.width=8, fig.cap="**Figure 13.** Forest plot of multivariate Cox proportional hazards model. Reference subtype: LumA. Age is entered as a continuous covariate; its hazard ratio represents the per-year increase in mortality risk independent of subtype and other clinical variables."}
+# Prepare modelling data
+cox_df <- df_subtype %>%
+  filter(
+    !is.na(er_status),
+    !is.na(menopause),
+    !is.na(os_months),
+    !is.na(os_event),
+    !is.na(age)
+  ) %>%
+  mutate(
+    pam50     = relevel(droplevels(pam50), ref = "LumA"),
+    er_bin    = if_else(er_status == "Positive", 1L, 0L),
+    her2_gain = if_else(her2_status == "GAIN", 1L, 0L),
+    chemo_bin = if_else(chemo == "YES", 1L, 0L),
+    pre_meno  = if_else(menopause == "Pre", 1L, 0L)
+  ) %>%
+  droplevels()
+
+cox_fit <- coxph(
+  Surv(os_months, os_event) ~
+    age + pre_meno + er_bin + her2_gain + chemo_bin + pam50,
+  data = cox_df
+)
+
+# Manual forest plot (avoids ggforest survminer bug with factor levels)
+forest_df <- broom::tidy(cox_fit, exponentiate = TRUE, conf.int = TRUE) %>%
+  mutate(
+    term = recode(term,
+      "age"             = "Age",
+      "pre_meno"        = "Premenopausal",
+      "er_bin"          = "ER Positive",
+      "her2_gain"       = "HER2 Gain",
+      "chemo_bin"       = "Chemotherapy",
+      "pam50LumB"       = "PAM50: LumB",
+      "pam50Her2"       = "PAM50: Her2",
+      "pam50Basal"      = "PAM50: Basal",
+      "pam50claudin-low"= "PAM50: Claudin-low",
+      "pam50Normal"     = "PAM50: Normal"
+    ),
+    sig = ifelse(p.value < 0.05, "p < 0.05", "p ≥ 0.05")
+  )
+
+ggplot(forest_df, aes(x = estimate, y = reorder(term, estimate),
+                      colour = sig)) +
+  geom_vline(xintercept = 1, linetype = "dashed", colour = "grey50") +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high),
+                 height = 0.25, linewidth = 0.7) +
+  geom_point(size = 3) +
+  scale_x_log10() +
+  scale_colour_manual(values = c("p < 0.05" = "#1E90FF", "p ≥ 0.05" = "#AED6F1")) +
+  labs(
+    title   = "Multivariate Cox Model: Predictors of Survival",
+    x       = "Hazard Ratio (log scale, 95% CI)",
+    y       = NULL,
+    colour  = NULL,
+    caption = "Reference: LumA subtype"
+  ) +
+  theme_metabric() +
+  theme(legend.position = "bottom")
+```
+
+```{r cox-ph-check, include=FALSE}
+# Proportional hazards assumption check
+cox.zph(cox_fit)
+```
+
+```{r cox-summary}
+# Tidy summary table
+cox_tidy <- broom::tidy(cox_fit, exponentiate = TRUE, conf.int = TRUE) %>%
+  mutate(
+    across(c(estimate, conf.low, conf.high), ~ round(.x, 2)),
+    p.value = formatC(p.value, format = "e", digits = 2)
+  ) %>%
+  rename(HR = estimate, `95% CI low` = conf.low, `95% CI high` = conf.high,
+         `p-value` = p.value)
+
+kable(cox_tidy, caption = "Table 3. Multivariate Cox model results.") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                full_width = FALSE, font_size = 13)
+```
+
+The Cox results (Table 3, Figure 13) confirm PAM50 subtype is a highly significant predictor after adjustment. HER2-enriched and LumB show the largest hazard ratios relative to LumA; readers should compare confidence intervals in Figure 13 to confirm these are well-estimated. Basal-like's hazard ratio attenuates after adjustment, suggesting its raw mortality disadvantage partly reflects its younger, more pre-menopausal composition. Importantly, age is independently significant — the HR and 95% CI for the age term in Table 3 quantify this effect directly. The result is most apparent in luminal disease, where the usually favourable prognosis of LumA and LumB appears partially undermined by endocrine resistance and elevated proliferative signalling in young tumours (Azim et al., 2015). The positive chemotherapy coefficient reflects confounding by indication.
+
+### 3.4 Treatment Patterns by Subtype and Menopausal Status
+
+```{r treatment-heatmap, fig.width=9, fig.cap="**Figure 14.** Treatment receipt rates by PAM50 subtype and menopausal state."}
+tx_df <- df %>%
+  group_by(pam50, menopause) %>%
+  summarise(
+    Chemotherapy  = mean(chemo      == "YES"),
+    `Hormone Tx`  = mean(hormone_tx == "YES"),
+    Radiotherapy  = mean(radio      == "YES"),
+    n = n(),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(c(Chemotherapy, `Hormone Tx`, Radiotherapy),
+               names_to = "Treatment", values_to = "Rate")
+
+ggplot(tx_df, aes(x = Treatment, y = Rate, fill = pam50)) +
+  geom_col(position = "dodge", width = 0.75) +
+  facet_wrap(~ menopause, labeller = label_both) +
+  scale_fill_manual(values = pam50_colours) +
+  scale_y_continuous(labels = percent_format()) +
+  labs(
+    title = "Treatment Receipt by PAM50 Subtype and Menopausal Status",
+    x = NULL, y = "Proportion receiving treatment", fill = "PAM50"
+  ) +
+  theme_metabric() +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1))
+```
+
+Treatment patterns largely follow subtype biology (Figure 14). Hormone therapy is almost exclusively given to ER-positive subtypes — tamoxifen in premenopausal and aromatase inhibitors in postmenopausal patients — while Basal-like patients receive chemotherapy at much higher rates. For young triple-negative patients, neoadjuvant chemotherapy is standard and pathological complete response provides important prognostic information (Cathcart-Rake et al., 2021).
+
+### 3.5 Survival Implications of Age-Subtype Interaction
+
+The survival penalty of young age is most pronounced in luminal subtypes, where the expected favourable prognosis of LumA or LumB appears partially undermined at young age (Azim et al., 2015). For Basal-like, the subtype biology is so dominant that age is harder to disentangle as an independent factor.
+
+---
+
+## 4. Does early onset modify treatment outcomes in premenopausal ER-positive breast cancer?
+
+### 4.1 Rationale and Study Group
+
+Section 4 focuses on the subgroup where AYA endocrine resistance is most clinically relevant — premenopausal women with ER-positive LumA or LumB disease. Standard treatment is tamoxifen, though SOFT and TEXT data support adding ovarian suppression in higher-risk cases, with the largest benefit in the youngest patients (Rosenberg & Partridge, 2015). AYA women with ER-positive disease carry roughly a 39% higher mortality risk than older stage-matched patients (Cathcart-Rake et al., 2021), and Section 3 showed this penalty persists after subtype adjustment.
+
+```{r q4-cohort}
+# ── Define the study group ─────────────────────────────────────────────────────
+# Premenopausal women with ER-positive LumA or LumB tumours
+pre_er_pos <- df %>%
+  filter(
+    menopause  == "Pre",
+    er_status  == "Positive",
+    pam50      %in% c("LumA", "LumB")
+  ) %>%
+  mutate(
+    # Four treatment groups of interest
+    tx_group = case_when(
+      hormone_tx == "YES" & chemo == "NO"  ~ "Hormone only",
+      hormone_tx == "NO"  & chemo == "YES" ~ "Chemo only",
+      hormone_tx == "YES" & chemo == "YES" ~ "Both",
+      hormone_tx == "NO"  & chemo == "NO"  ~ "Neither"
+    ),
+    tx_group  = factor(tx_group,
+                       levels = c("Hormone only", "Chemo only", "Both", "Neither")),
+    pam50     = droplevels(pam50),
+    # Age-group for AYA stratification
+    aya_group = if_else(age < 40, "AYA (<40)", "Premenopausal ≥40")
+  )
+
+# Summary table of group sizes — now broken down by AYA status
+pre_er_pos %>%
+  count(pam50, aya_group, tx_group) %>%
+  pivot_wider(names_from = tx_group, values_from = n, values_fill = 0) %>%
+  kable(caption = "Table 4. Patient counts by PAM50 subtype, AYA status, and treatment group (premenopausal, ER-positive only).") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                full_width = FALSE, font_size = 13)
+```
+
+```{r q4-desc, fig.cap="**Figure 15.** Treatment group distribution in premenopausal ER-positive patients, split by PAM50 subtype. LumB patients receive more chemotherapy-inclusive regimens, a pattern that is particularly pronounced in AYA patients whose higher-risk tumour profiles trigger more aggressive treatment allocation."}
+ggplot(pre_er_pos, aes(x = pam50, fill = tx_group)) +
+  geom_bar(position = "fill", width = 0.65) +
+  scale_y_continuous(labels = percent_format()) +
+  scale_fill_manual(
+    values = c(
+      "Hormone only" = "#1E90FF",
+      "Chemo only"   = "#154360",
+      "Both"         = "#5DADE2",
+      "Neither"      = "#AED6F1"
+    )
+  ) +
+  labs(
+    title = "Treatment Allocation in Premenopausal ER-Positive Patients",
+    x     = "PAM50 Subtype",
+    y     = "Proportion of patients",
+    fill  = "Treatment group"
+  ) +
+  theme_metabric()
+```
+
+As expected from the subtype biology, hormone therapy dominates in LumA and LumB patients are more likely to receive chemotherapy-inclusive regimens (Figure 15). Table 4 shows the absolute patient counts underpinning these proportions — readers should note how small the AYA (<40) subgroups are within individual treatment categories, particularly for LumA, which limits the power of any within-subtype age comparison.
+
+### 4.2 Kaplan–Meier Survival by Treatment Group
+
+```{r q4-km, fig.height=14, fig.width=9, fig.cap="**Figure 16.** Kaplan–Meier overall survival curves in premenopausal ER-positive patients, stratified by treatment group and PAM50 subtype. P-values from log-rank tests. These curves show the subtype-level patterns; age-group stratification within this population is discussed in Section 4.5."}
+tx_colours <- c(
+  "Hormone only" = "#1E90FF",
+  "Chemo only"   = "#154360",
+  "Both"         = "#5DADE2",
+  "Neither"      = "#AED6F1"
+)
+
+# Remove "Neither" — too few for reliable KM estimates
+pre_er_km <- pre_er_pos %>%
+  filter(tx_group != "Neither") %>%
+  droplevels()
+
+# ── Helper: short legend labels (strip "tx_group=" prefix from strata) ─────
+clean_legend <- function(x) gsub("tx_group=", "", x)
+
+# ── Shared ggsurvplot options ────────────────────────────────────────────────
+km_opts <- list(
+  pval              = TRUE,
+  pval.size         = 4,
+  conf.int          = FALSE,
+  risk.table        = TRUE,
+  risk.table.height = 0.25,
+  risk.table.y.text       = FALSE,   # coloured squares instead of text labels
+  risk.table.col          = "strata",
+  risk.table.y.text.col   = TRUE,
+  tables.y.text           = FALSE,   # suppress y-axis title on risk table
+  xlab              = "Overall survival (months)",
+  ylab              = "Survival probability",
+  legend.title      = "Treatment",
+  legend.labs       = clean_legend(names(tx_colours[
+                          levels(pre_er_km$tx_group)])),
+  font.main         = c(13, "bold"),
+  font.x            = 11,
+  font.y            = 11,
+  font.tickslab     = 10,
+  ggtheme           = theme_metabric()
+)
+
+# ── Combined plot (all LumA + LumB) ─────────────────────────────────────────
+km_tx <- survfit(Surv(os_months, os_event) ~ tx_group, data = pre_er_km)
+p_combined <- do.call(ggsurvplot, c(
+  list(fit   = km_tx,
+       data  = pre_er_km,
+       palette = unname(tx_colours[levels(pre_er_km$tx_group)]),
+       title = "All premenopausal ER+ (LumA + LumB)"),
+  km_opts
+))
+
+# ── LumA only ────────────────────────────────────────────────────────────────
+df_luma <- pre_er_km %>% filter(pam50 == "LumA") %>% droplevels()
+km_luma <- survfit(Surv(os_months, os_event) ~ tx_group, data = df_luma)
+luma_labs <- clean_legend(names(tx_colours[levels(df_luma$tx_group)]))
+p_luma <- do.call(ggsurvplot, c(
+  list(fit     = km_luma,
+       data    = df_luma,
+       palette = unname(tx_colours[levels(df_luma$tx_group)]),
+       title   = "LumA only",
+       legend.labs = luma_labs),
+  km_opts[!names(km_opts) %in% "legend.labs"]
+))
+
+# ── LumB only ────────────────────────────────────────────────────────────────
+df_lumb <- pre_er_km %>% filter(pam50 == "LumB") %>% droplevels()
+km_lumb <- survfit(Surv(os_months, os_event) ~ tx_group, data = df_lumb)
+lumb_labs <- clean_legend(names(tx_colours[levels(df_lumb$tx_group)]))
+p_lumb <- do.call(ggsurvplot, c(
+  list(fit     = km_lumb,
+       data    = df_lumb,
+       palette = unname(tx_colours[levels(df_lumb$tx_group)]),
+       title   = "LumB only",
+       legend.labs = lumb_labs),
+  km_opts[!names(km_opts) %in% "legend.labs"]
+))
+
+# ── Arrange stacked ──────────────────────────────────────────────────────────
+arrange_ggsurvplots(
+  list(p_combined, p_luma, p_lumb),
+  ncol = 1,
+  nrow = 3
+)
+```
+
+The KM curves (Figure 16) show hormone-only treatment tracking with good outcomes in LumA, while LumB shows more separation between treatment groups, suggesting hormone therapy alone may not be sufficient for a notable proportion of LumB patients. Table 6 gives the absolute event counts and median OS values supporting this interpretation — in LumB, median OS in the hormone-only group is visibly lower than in LumA, and mortality rates are higher across all treatment categories.
+
+### 4.3 Multivariate Cox Model: Treatment Effect Adjusted for Age
+
+Because treatment assignment is not random, as clinicians preferentially give chemotherapy to younger, higher-risk patients, a raw KM comparison may confound treatment benefit with baseline risk. A Cox model adjusting for age and subtype provides a more reliable estimate of the independent treatment effect.
+
+```{r q4-cox, fig.cap="**Figure 17.** Forest plot of Cox model for premenopausal ER-positive patients. Reference: hormone therapy only. Age is included as a continuous covariate to estimate whether the survival penalty of early onset persists after adjusting for subtype and treatment group."}
+if (!requireNamespace("broom", quietly = TRUE)) install.packages("broom")
+library(broom)
+
+cox_pre_er <- coxph(
+  Surv(os_months, os_event) ~ age + pam50 + tx_group,
+  data = pre_er_km
+)
+
+# Manual forest plot
+forest_q4 <- broom::tidy(cox_pre_er, exponentiate = TRUE, conf.int = TRUE) %>%
+  mutate(
+    term = recode(term,
+      "age"                  = "Age",
+      "pam50LumB"            = "PAM50: LumB",
+      "tx_groupChemo only"   = "Chemo only",
+      "tx_groupBoth"         = "Both (Hormone + Chemo)"
+    ),
+    sig = ifelse(p.value < 0.05, "p < 0.05", "p ≥ 0.05")
+  )
+
+ggplot(forest_q4, aes(x = estimate, y = reorder(term, estimate),
+                      colour = sig)) +
+  geom_vline(xintercept = 1, linetype = "dashed", colour = "grey50") +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high),
+                 height = 0.25, linewidth = 0.7) +
+  geom_point(size = 3) +
+  scale_x_log10() +
+  scale_colour_manual(values = c("p < 0.05" = "#1E90FF", "p ≥ 0.05" = "#AED6F1")) +
+  labs(
+    title   = "Cox Model: Premenopausal ER+ Patients",
+    x       = "Hazard Ratio (log scale, 95% CI)",
+    y       = NULL,
+    colour  = NULL,
+    caption = "Reference: Hormone therapy only"
+  ) +
+  theme_metabric() +
+  theme(legend.position = "bottom")
+```
+
+```{r q4-cox-table}
+tidy(cox_pre_er, exponentiate = TRUE, conf.int = TRUE) %>%
+  mutate(
+    across(c(estimate, conf.low, conf.high), ~ round(.x, 2)),
+    p.value = formatC(p.value, format = "e", digits = 2)
+  ) %>%
+  rename(HR = estimate, `95% CI low` = conf.low,
+         `95% CI high` = conf.high, `p-value` = p.value) %>%
+  kable(caption = "Table 5. Cox proportional hazards model results for premenopausal ER-positive patients.") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                full_width = FALSE, font_size = 13)
+```
+
+### 4.4 Median Survival and Mortality Summary
+
+```{r q4-summary-table}
+pre_er_pos %>%
+  filter(tx_group != "Neither") %>%
+  group_by(pam50, tx_group) %>%
+  summarise(
+    N              = n(),
+    Deaths         = sum(os_event),
+    `Mortality (%)` = round(mean(os_event) * 100, 1),
+    `Median OS (months)` = round(median(os_months), 1),
+    `Mean OS (months)`   = round(mean(os_months), 1),
+    .groups = "drop"
+  ) %>%
+  kable(caption = "Table 6. Survival summary by subtype and treatment group (premenopausal ER-positive patients).") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+                full_width = FALSE, font_size = 13)
+```
+
+Table 6 gives absolute event counts and median OS by subtype and treatment group. The higher mortality rates in chemotherapy-receiving groups reflect selection of higher-risk patients rather than a harmful treatment effect — this is most evident by comparing the LumB hormone-only and combined-treatment rows, where the combined group has both higher mortality and similar or shorter median OS, consistent with confounding by indication.
+
+### 4.5 Interpretation: Does Early Onset Modify Subtype-Level Treatment Response?
+
+LumA patients on hormone therapy alone generally do well, consistent with limited chemotherapy benefit in low-risk ER-positive patients (Prat et al., 2015). LumB tells a different story. Hormone therapy alone appears insufficient for a proportion of patients, consistent with elevated endocrine resistance in young LumB tumours. This supports more intensive endocrine therapy — specifically ovarian suppression plus aromatase inhibitor — in the youngest premenopausal LumB patients (Rosenberg & Partridge, 2015). Readers should refer to Table 5 for the age HR in this subgroup. Given the small <40 group within LumB, findings are directional and hypothesis-generating.
+
+---
+
+# Discussion
+
+## Summary of Key Findings
+
+The results of this analysis broadly support the hypothesis that early-onset breast cancer is not simply adult disease occurring at a younger age, but a biologically distinct entity with its own subtype distribution, genomic profile, and survival trajectory.
+
+The most striking finding from Section 1 was the shift in subtype composition in younger patients. Basal-like and claudin-low tumours are markedly overrepresented in the <40 group. Since these are predominantly triple-negative, this alone explains much of the survival disadvantage — there are no hormone or HER2 targets to exploit.
+
+The Cox model in Section 3 shows that age retains independent prognostic value after adjusting for subtype, most visibly in luminal disease (Table 3, age HR). This is consistent with evidence that younger LumA patients harbour elevated proliferative signalling not captured by standard biomarkers (Azim et al., 2015). *GATA3* enrichment in young luminal patients (Figure 9) may reflect the same biology. The treatment analysis in Section 4 is exploratory — the LumB patterns are consistent with the literature but should not be overinterpreted given small sample sizes.
+
+## Limitations
+
+The most fundamental limitation is the cohort's historical span (recruitment approximately 1977–2005), during which treatment evolved substantially. Trastuzumab was unavailable for most of the recruitment period, so HER2-enriched survival outcomes underestimate what modern anti-HER2 therapy achieves; similarly, Basal-like outcomes predate PARP inhibitors and platinum-based chemotherapy in BRCA-mutant TNBC.
+
+Clinical biomarkers (ER by IHC, HER2 by SNP array) are used as proxies for molecular biology, introducing noise. Ki67 is unavailable, which is problematic for distinguishing LumA from LumB; some subtype misclassification is likely.
+
+The Cox models were fitted without formally testing the proportional hazards assumption. Given that LumB and Basal-like survival curves cross in the KM plots (Figure 12), reported hazard ratios should be understood as time-averaged estimates. Treatment analyses in Section 4 are subject to confounding by indication and are hypothesis-generating only. The <40 subgroup is small enough within individual subtypes that KM curves at later time points are unreliable.
+
+## Suggestions for Future Development
+
+The most immediate extension would be adding age–subtype interaction terms to the Cox model to formally test whether the within-subtype age effect differs across subtypes — the current main-effects model cannot answer this, and Figure 11 suggests the penalty may be larger in LumA than Basal-like.
+
+Using the METABRIC gene expression microarray data to directly compare transcriptomic profiles of early-onset versus older patients within each subtype would move the analysis beyond biomarker proxies, enabling direct characterisation of proliferative index, endocrine resistance signatures, and pathway activity by age group.
+
+Mutational signature decomposition would be informative, particularly for quantifying BRCA-associated HRD (Signature 3) in young Basal-like patients and APOBEC activity in young HER2-enriched patients. Pooling with TCGA data would address the small <40 sample sizes.
+
+
+---
+
+# Conclusion
+
+Overall, the findings are consistent and tell a coherent story. Women under 40 in METABRIC have a different subtype distribution from older patients — more Basal-like and claudin-low, less LumA — and the genomic data reflects this pattern. Basal-like tumours show elevated mutation burden and *TP53* dominance; young luminal patients show *GATA3* enrichment. The multivariable Cox model shows that age is independently significant even after accounting for subtype, suggesting the survival disadvantage of early onset is not fully explained by enrichment in aggressive subtypes alone.
+
+The within-subtype age effect is small but detectable, and it appears most relevant in luminal disease. In the premenopausal ER-positive group, the patterns are consistent with elevated endocrine resistance at young age in LumB, though the sample is genuinely too small in METABRIC to make strong claims here.
+
+Taken together, these results suggest that PAM50 subtype alone is not enough to fully characterise risk in young women. Age-specific biology matters and probably deserves more explicit consideration in how young patients, particularly those with luminal disease, are treated and monitored clinically.
+
+
+---
+
+# References
+
+Mayakonda A, Lin DC, Assenov Y, Plass C, Koeffler HP. Maftools: efficient and comprehensive analysis of somatic variants in cancer. *Genome Research*. 2018;28(11):1747–1756. https://doi.org/10.1101/gr.239244.118
+
+Gendoo DMA, Ratanasirigulchai N, Schröder MS, et al. Genefu: an R/Bioconductor package for computation of gene expression-based signatures in breast cancer. *Bioinformatics*. 2016;32(7):1097–1099. https://doi.org/10.1093/bioinformatics/btv693
+
+Curtis C, Shah SP, Chin SF, et al. The genomic and transcriptomic architecture of 2,000 breast tumours reveals novel subgroups. *Nature*. 2012;486:346–352. https://doi.org/10.1038/nature10983
+
+Anastasiadi Z, Lianos GD, Ignatiadou E, Harissis HV, Mitsis M. Breast cancer in young women: an overview. *Updates in Surgery*. 2017;69(3):313–317. https://doi.org/10.1007/s13304-017-0424-1
+
+Azim HA Jr, Nguyen B, Brohée S, Zoppoli G, Sotiriou C. Genomic aberrations in young and elderly breast cancer patients. *BMC Medicine*. 2015;13:266. https://doi.org/10.1186/s12916-015-0504-3
+
+Azim HA Jr, Partridge AH. Biology of breast cancer in young women. *Breast Cancer Research*. 2014;16:427. https://doi.org/10.1186/s13058-014-0427-5
+
+Cathcart-Rake EJ, Ruddy KJ, Bleyer A, Johnson RH. Breast cancer in adolescent and young adult women under the age of 40 years. *JCO Oncology Practice*. 2021;17(6):305–313. https://doi.org/10.1200/OP.20.00793
+
+Klauber-DeMore N. Tumor biology of breast cancer in young women. *Breast Disease*. 2005/2006;23:9–15. https://doi.org/10.3233/bd-2006-23103
+
+Pereira B, Chin SF, Rueda OM, et al. The somatic mutation profiles of 2,433 breast cancers refines their genomic and transcriptomic landscapes. *Nature Communications*. 2016;7:11479. https://doi.org/10.1038/ncomms11479
+
+Prat A, Pineda E, Adamo B, et al. Clinical implications of the intrinsic molecular subtypes of breast cancer. *The Breast*. 2015;24(Suppl 2):S26–S35. https://doi.org/10.1016/j.breast.2015.07.008
+
+Rosenberg SM, Partridge AH. Management of breast cancer in very young women. *The Breast*. 2015;24(Suppl 2):S154–S158. https://doi.org/10.1016/j.breast.2015.07.036
+
+Torres-Mejía G, Navarro-López E, de Jesús Tuesca-Molina R, Ángeles-Llerenas A. The epidemiological challenges of breast cancer among premenopausal women in limited resource settings. *Revista de Investigación Clínica*. 2017;69(2):59–65. DOI https://doi.org/10.24875/ric.17002239
+
+---
+
+**Data and Code Availability**
+
+All files associated with this report, including the R Markdown source, data files, and supplementary materials, are available at: [https://github.com/Yuliya0257/Y.Savenko-Module-3-files](https://github.com/Yuliya0257/Y.Savenko-Module-3-files.git)
